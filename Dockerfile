@@ -18,7 +18,8 @@ COPY backend/ ./
 # Copy built frontend into static directory
 COPY --from=frontend-build /app/frontend/dist ./static
 
-ENV OBAN_KANBAN_DIR=/data/kanbans
+ENV OBAN_VAULT_DIR=/data/vault
+ENV OBAN_KANBAN_DIR=/data/vault/Kanbans
 
 EXPOSE 8000
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

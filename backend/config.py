@@ -7,7 +7,8 @@ from dotenv import load_dotenv
 _root = Path(__file__).resolve().parent.parent
 load_dotenv(_root / ".env")
 
-KANBAN_DIR = Path(os.environ.get("OBAN_KANBAN_DIR", "./kanbans"))
+VAULT_DIR = Path(os.environ.get("OBAN_VAULT_DIR", "."))
+KANBAN_DIR = Path(os.environ.get("OBAN_KANBAN_DIR", str(VAULT_DIR / "kanbans")))
 OBSIDIAN_VAULT = os.environ.get("OBAN_OBSIDIAN_VAULT", "")
 DEFAULT_DASHBOARD_COLUMN = int(os.environ.get("OBAN_DEFAULT_COLUMN", "1"))
 PINNED_BOARD = os.environ.get("OBAN_PINNED_BOARD", "")

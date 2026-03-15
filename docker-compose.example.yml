@@ -5,9 +5,10 @@ services:
     ports:
       - "8080:8000"
     volumes:
-      - /path/to/your/obsidian/vault/Kanbans:/data/kanbans
+      - /path/to/your/obsidian/vault:/data/vault
     environment:
-      - OBAN_KANBAN_DIR=/data/kanbans
+      - OBAN_VAULT_DIR=/data/vault
+      - OBAN_KANBAN_DIR=/data/vault/Kanbans
       - OBAN_OBSIDIAN_VAULT=YourVaultName
       - OBAN_PINNED_BOARD=Inbox
       - OBAN_STRIP_SUFFIX=" Kanban"
