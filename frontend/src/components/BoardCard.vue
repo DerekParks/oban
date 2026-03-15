@@ -11,6 +11,7 @@
       group="dashboard-tasks"
       ghost-class="ghost"
       drag-class="dragging"
+      :disabled="!props.dragEnabled"
       @start="onDragStart"
       @end="onDragEnd"
     >
@@ -45,7 +46,8 @@ import { VueDraggable } from 'vue-draggable-plus'
 import { useObsidian, columnIndexFor } from '../composables/useObsidian.js'
 
 const props = defineProps({
-  board: { type: Object, required: true }
+  board: { type: Object, required: true },
+  dragEnabled: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['delete-task', 'move-task', 'complete-task', 'add-task', 'navigate'])
@@ -160,12 +162,7 @@ function onDragEnd(evt) {
   gap: 0.5rem;
   font-size: 0.9rem;
   color: var(--text-primary);
-  cursor: grab;
   border-radius: 4px;
-}
-
-.task-item:active {
-  cursor: grabbing;
 }
 
 .task-item:last-child {

@@ -21,6 +21,13 @@
       />
       <button type="submit" class="add-btn" :disabled="!selectedBoard || !newTaskText.trim()">Add</button>
       <button
+        type="button"
+        class="drag-toggle"
+        :class="{ active: dragEnabled }"
+        @click="dragEnabled = !dragEnabled"
+        :title="dragEnabled ? 'Disable drag & drop' : 'Enable drag & drop'"
+      >&#x2630;</button>
+      <button
         v-if="speechSupported"
         type="button"
         class="mic-btn"
@@ -35,6 +42,7 @@
         v-for="board in boards"
         :key="board.name"
         :board="board"
+        :drag-enabled="dragEnabled"
         @navigate="$router.push(`/board/${encodeURIComponent(board.name)}`)"
         @delete-task="deleteTask"
         @move-task="moveTask"
@@ -60,6 +68,7 @@ const boards = ref([])
 const boardNames = ref([])
 const selectedBoard = ref('')
 const newTaskText = ref('')
+const dragEnabled = ref(false)
 const { data: wsData, connected } = useWebSocket(WS_URL)
 
 // --- Speech recognition ---
@@ -313,6 +322,28 @@ async function addTask() {
     grid-template-columns: 1fr;
     gap: 0.75rem;
   }
+}
+
+.drag-toggle {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.drag-toggle:hover {
+  border-color: var(--accent);
+}
+
+.drag-toggle.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
 }
 
 .mic-btn {
