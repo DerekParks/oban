@@ -246,6 +246,26 @@ async function addTask() {
   gap: 1rem;
 }
 
+@media (max-width: 640px) {
+  .quick-add {
+    flex-wrap: wrap;
+  }
+
+  .board-select {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .add-btn {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .board-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}
+
 .no-boards {
   text-align: center;
   color: var(--text-muted);

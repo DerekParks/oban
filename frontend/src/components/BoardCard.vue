@@ -264,6 +264,35 @@ function onDragEnd(evt) {
   color: var(--text-muted);
 }
 
+@media (max-width: 640px) {
+  .board-card {
+    padding: 1rem;
+    border-radius: 8px;
+  }
+
+  .board-name {
+    font-size: 1rem;
+  }
+
+  .column-label {
+    margin-bottom: 0.5rem;
+  }
+
+  .task-item {
+    padding: 0.3rem 0;
+    font-size: 0.85rem;
+  }
+
+  .delete-btn {
+    opacity: 0.5;
+  }
+
+  .inline-add {
+    opacity: 1;
+    max-height: 3rem;
+  }
+}
+
 .inline-input:focus {
   border-color: var(--accent);
 }
