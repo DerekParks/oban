@@ -1,0 +1,14 @@
+services:
+  oban:
+    image: ghcr.io/derekparks/oban:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8000"
+    volumes:
+      - /path/to/your/obsidian/vault/Kanbans:/data/kanbans
+    environment:
+      - OBAN_KANBAN_DIR=/data/kanbans
+      - OBAN_OBSIDIAN_VAULT=YourVaultName
+      - OBAN_PINNED_BOARD=Inbox
+      - OBAN_STRIP_SUFFIX=" Kanban"
+      - OBAN_DEFAULT_COLUMN=1
