@@ -20,6 +20,14 @@
         :disabled="!selectedBoard"
       />
       <button type="submit" class="add-btn" :disabled="!selectedBoard || !newTaskText.trim()">Add</button>
+      <button
+        v-if="speechSupported"
+        type="button"
+        class="mic-btn"
+        :class="{ listening }"
+        @click="toggleSpeech"
+        :title="listening ? 'Stop listening' : 'Voice input'"
+      >&#x1f3a4;</button>
     </form>
 
     <div class="board-grid">
@@ -39,7 +47,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import BoardCard from './BoardCard.vue'
 import { useWebSocket } from '../composables/useWebSocket.js'
 import { getPinnedBoard } from '../composables/useObsidian.js'
@@ -53,6 +61,47 @@ const boardNames = ref([])
 const selectedBoard = ref('')
 const newTaskText = ref('')
 const { data: wsData, connected } = useWebSocket(WS_URL)
+
+// --- Speech recognition ---
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+const speechSupported = !!SpeechRecognition
+const listening = ref(false)
+let recognition = null
+
+if (speechSupported) {
+  recognition = new SpeechRecognition()
+  recognition.continuous = false
+  recognition.interimResults = false
+  recognition.lang = 'en-US'
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript
+    newTaskText.value = newTaskText.value
+      ? newTaskText.value + ' ' + transcript
+      : transcript
+  }
+
+  recognition.onend = () => {
+    listening.value = false
+  }
+
+  recognition.onerror = () => {
+    listening.value = false
+  }
+}
+
+function toggleSpeech() {
+  if (listening.value) {
+    recognition.stop()
+  } else {
+    recognition.start()
+    listening.value = true
+  }
+}
+
+onUnmounted(() => {
+  if (recognition && listening.value) recognition.stop()
+})
 
 function sortBoards(list) {
   const pinned = getPinnedBoard()
@@ -264,6 +313,33 @@ async function addTask() {
     grid-template-columns: 1fr;
     gap: 0.75rem;
   }
+}
+
+.mic-btn {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.mic-btn:hover {
+  border-color: var(--accent);
+}
+
+.mic-btn.listening {
+  background: #ef444422;
+  border-color: #ef4444;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .no-boards {
