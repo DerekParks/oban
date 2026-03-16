@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from watchdog.events import FileSystemEventHandler, FileModifiedEvent, FileCreatedEvent, FileDeletedEvent
 from watchdog.observers import Observer
 
-from config import KANBAN_DIR, OBSIDIAN_VAULT, BOARD_COLUMNS, DEFAULT_DASHBOARD_COLUMN, PINNED_BOARD, STRIP_SUFFIX, dashboard_column_for
+from config import KANBAN_DIR, OBSIDIAN_VAULT, BOARD_COLUMNS, DEFAULT_DASHBOARD_COLUMN, PINNED_BOARD, STRIP_SUFFIX, WIP_LIMIT, dashboard_column_for
 from parser import Board, parse_all_boards, parse_board
 from writer import add_task_to_column, remove_task_from_column, pop_task_from_column, insert_raw_task
 
@@ -201,6 +201,7 @@ def get_config():
         "default_column": DEFAULT_DASHBOARD_COLUMN,
         "board_columns": BOARD_COLUMNS,
         "pinned_board": PINNED_BOARD,
+        "wip_limit": WIP_LIMIT,
     }
 
 

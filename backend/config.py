@@ -13,6 +13,7 @@ OBSIDIAN_VAULT = os.environ.get("OBAN_OBSIDIAN_VAULT", "")
 DEFAULT_DASHBOARD_COLUMN = int(os.environ.get("OBAN_DEFAULT_COLUMN", "1"))
 PINNED_BOARD = os.environ.get("OBAN_PINNED_BOARD", "")
 STRIP_SUFFIX = os.environ.get("OBAN_STRIP_SUFFIX", " Kanban")
+WIP_LIMIT = int(os.environ.get("OBAN_WIP_LIMIT", "15"))
 
 # Per-board column overrides: { "Board Name": column_index }
 # Loaded from oban.boards.json if it exists

@@ -4,6 +4,7 @@ const vault = ref('')
 const defaultColumn = ref(1)
 const boardColumns = ref({})
 const pinnedBoard = ref('')
+const wipLimit = ref(15)
 
 export async function loadObsidianConfig() {
   if (vault.value) return
@@ -15,6 +16,7 @@ export async function loadObsidianConfig() {
     defaultColumn.value = data.default_column ?? 1
     boardColumns.value = data.board_columns ?? {}
     pinnedBoard.value = data.pinned_board ?? ''
+    wipLimit.value = data.wip_limit ?? 15
   } catch (e) {
     console.error('Failed to load obsidian config:', e)
   }
@@ -22,6 +24,10 @@ export async function loadObsidianConfig() {
 
 export function getPinnedBoard() {
   return pinnedBoard.value
+}
+
+export function getWipLimit() {
+  return wipLimit.value
 }
 
 export function columnIndexFor(boardName) {

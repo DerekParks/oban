@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard">
     <header class="header">
-      <h1>Oban</h1>
+      <h1>Oban <span class="wip-badge" :class="{ over: overWip }">{{ totalTasks }}/{{ wipLimit }}</span></h1>
       <span class="status" :class="{ online: connected }">
         {{ connected ? 'Live' : 'Reconnecting…' }}
       </span>
@@ -55,10 +55,10 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import BoardCard from './BoardCard.vue'
 import { useWebSocket } from '../composables/useWebSocket.js'
-import { getPinnedBoard } from '../composables/useObsidian.js'
+import { getPinnedBoard, getWipLimit } from '../composables/useObsidian.js'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
 const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -70,6 +70,12 @@ const selectedBoard = ref('')
 const newTaskText = ref('')
 const dragEnabled = ref(false)
 const { data: wsData, connected } = useWebSocket(WS_URL)
+
+const totalTasks = computed(() =>
+  boards.value.reduce((sum, b) => sum + (b.tasks ? b.tasks.length : 0), 0)
+)
+const wipLimit = computed(() => getWipLimit())
+const overWip = computed(() => totalTasks.value > wipLimit.value)
 
 // --- Speech recognition ---
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -238,6 +244,23 @@ async function addTask() {
   margin: 0;
   font-size: 1.5rem;
   color: var(--text-primary);
+}
+
+.wip-badge {
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--border);
+  color: var(--text-muted);
+  vertical-align: middle;
+  margin-left: 0.5rem;
+}
+
+.wip-badge.over {
+  background: #ef444422;
+  color: #ef4444;
+  font-weight: 700;
 }
 
 .status {
