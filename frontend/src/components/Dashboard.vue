@@ -170,18 +170,15 @@ async function addTaskToBoard(boardName, columnIndex, text) {
 }
 
 async function completeTask(boardName, columnIndex, taskIndex) {
-  // Move to next column (e.g. Working -> Done, Inbox -> Triaged)
+  // Move to the last (done) column of the board
   try {
-    await fetch(`${API_BASE}/api/tasks/move`, {
+    await fetch(`${API_BASE}/api/tasks/complete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from_board: boardName,
-        from_column: columnIndex,
-        from_index: taskIndex,
-        to_board: boardName,
-        to_column: columnIndex + 1,
-        to_index: 0,
+        board: boardName,
+        column_index: columnIndex,
+        task_index: taskIndex,
       }),
     })
   } catch (e) {

@@ -21,7 +21,7 @@
         class="task-item"
         :class="{ completed: task.completed }"
       >
-        <span class="checkbox" @click.stop="$emit('complete-task', board.name, columnIndex, i)">☐</span>
+        <span class="checkbox" @click.stop="onComplete(i)">☐</span>
         <span class="task-text" v-html="renderTask(task.text)"></span>
         <button class="delete-btn" @click.stop="$emit('delete-task', board.name, columnIndex, i)" title="Remove task">&times;</button>
       </li>
@@ -59,6 +59,11 @@ const localTasks = ref([...(props.board.tasks || [])])
 const columnIndex = props.board.column_index ?? columnIndexFor(props.board.name)
 const newText = ref('')
 const inputFocused = ref(false)
+
+function onComplete(index) {
+  localTasks.value.splice(index, 1)
+  emit('complete-task', props.board.name, columnIndex, index)
+}
 
 function onAdd() {
   const text = newText.value.trim()

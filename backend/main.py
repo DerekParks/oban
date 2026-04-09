@@ -25,6 +25,7 @@ _boards: dict[str, Board] = {}
 _board_files: dict[str, Path] = {}  # board name -> file path
 _connected_clients: set[WebSocket] = set()
 _observer: Observer | None = None
+_last_api_write: float = 0  # monotonic timestamp of last API file write
 
 
 class AddTaskRequest(BaseModel):
@@ -34,6 +35,12 @@ class AddTaskRequest(BaseModel):
 
 
 class DeleteTaskRequest(BaseModel):
+    board: str
+    column_index: int
+    task_index: int
+
+
+class CompleteTaskRequest(BaseModel):
     board: str
     column_index: int
     task_index: int
@@ -92,6 +99,7 @@ class KanbanFileHandler(FileSystemEventHandler):
         self._debounce_seconds = 0.5
 
     def _handle(self, event):
+        global _last_api_write
         path = Path(event.src_path)
         if path.suffix != ".md":
             return
@@ -101,6 +109,12 @@ class KanbanFileHandler(FileSystemEventHandler):
         if now - self._last_event_time < self._debounce_seconds:
             return
         self._last_event_time = now
+
+        # Skip if an API handler recently wrote files — it handles
+        # its own re-parse and broadcast, so ours would be redundant
+        # and could race (stale data overwriting the correct broadcast).
+        if now - _last_api_write < 1.0:
+            return
 
         if isinstance(event, FileDeletedEvent):
             board_name = path.stem
@@ -219,7 +233,9 @@ async def add_task(req: AddTaskRequest):
     if not board or not filepath:
         raise HTTPException(status_code=404, detail="Board not found")
 
+    global _last_api_write
     col_idx = req.column_index if req.column_index is not None else dashboard_column_for(req.board)
+    _last_api_write = time.monotonic()
     add_task_to_column(filepath, col_idx, req.text)
 
     # Re-parse to update in-memory state
@@ -233,6 +249,32 @@ async def add_task(req: AddTaskRequest):
     return {"ok": True}
 
 
+@app.post("/api/tasks/complete")
+async def complete_task(req: CompleteTaskRequest):
+    """Move a task to the last (done) column of its board."""
+    board = _boards.get(req.board)
+    filepath = _board_files.get(req.board)
+    if not board or not filepath:
+        raise HTTPException(status_code=404, detail="Board not found")
+    if len(board.columns) < 2:
+        raise HTTPException(status_code=400, detail="Board needs at least two columns")
+
+    done_column = len(board.columns) - 1
+
+    global _last_api_write
+    _last_api_write = time.monotonic()
+
+    raw_line = pop_task_from_column(filepath, req.column_index, req.task_index)
+    insert_raw_task(filepath, done_column, 0, raw_line)
+
+    updated = parse_board(filepath)
+    if updated:
+        _boards[updated.name] = updated
+
+    await _broadcast(_dashboard_payload())
+    return {"ok": True}
+
+
 @app.post("/api/tasks/move")
 async def move_task(req: MoveTaskRequest):
     """Move a task between boards/columns."""
@@ -240,6 +282,9 @@ async def move_task(req: MoveTaskRequest):
     dst_filepath = _board_files.get(req.to_board)
     if not src_filepath or not dst_filepath:
         raise HTTPException(status_code=404, detail="Board not found")
+
+    global _last_api_write
+    _last_api_write = time.monotonic()
 
     # Pop from source
     raw_line = pop_task_from_column(src_filepath, req.from_column, req.from_index)
@@ -265,6 +310,8 @@ async def delete_task(req: DeleteTaskRequest):
     if not board or not filepath:
         raise HTTPException(status_code=404, detail="Board not found")
 
+    global _last_api_write
+    _last_api_write = time.monotonic()
     remove_task_from_column(filepath, req.column_index, req.task_index)
 
     updated = parse_board(filepath)
