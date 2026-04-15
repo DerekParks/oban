@@ -13,7 +13,7 @@
         </div>
         <ul class="task-list">
           <li v-for="(task, ti) in col.tasks" :key="ti" class="task-item" :class="{ completed: task.completed }">
-            <span class="checkbox">{{ task.completed ? '☑' : '☐' }}</span>
+            <span class="checkbox" @click="completeTask(ci, ti)">{{ task.completed ? '☑' : '☐' }}</span>
             <span class="task-text" v-html="renderTask(task.text)"></span>
             <button class="delete-btn" @click="deleteTask(ci, ti)" title="Remove task">&times;</button>
           </li>
@@ -39,6 +39,19 @@ import { useObsidian } from '../composables/useObsidian.js'
 const { renderTask } = useObsidian()
 const board = ref(null)
 let pollTimer = null
+
+async function completeTask(columnIndex, taskIndex) {
+  try {
+    const res = await fetch(`${API_BASE}/api/tasks/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ board: props.name, column_index: columnIndex, task_index: taskIndex }),
+    })
+    if (res.ok) fetchBoard()
+  } catch (e) {
+    console.error('Failed to complete task:', e)
+  }
+}
 
 async function deleteTask(columnIndex, taskIndex) {
   try {
@@ -158,6 +171,7 @@ onUnmounted(() => {
 
 .checkbox {
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .delete-btn {
