@@ -66,12 +66,13 @@ def _dashboard_payload() -> str:
     for b in _boards.values():
         col_idx = dashboard_column_for(b.name)
         col = b.get_dashboard_column(col_idx)
-        result.append({
-            "name": b.name,
-            "column_name": col.name if col else None,
-            "column_index": col_idx,
-            "tasks": [asdict(t) for t in col.tasks] if col else [],
-        })
+        if col and col.tasks:
+            result.append({
+                "name": b.name,
+                "column_name": col.name,
+                "column_index": col_idx,
+                "tasks": [asdict(t) for t in col.tasks],
+            })
     return json.dumps({"boards": result})
 
 
@@ -188,12 +189,13 @@ def get_boards_dashboard():
     for b in _boards.values():
         col_idx = dashboard_column_for(b.name)
         col = b.get_dashboard_column(col_idx)
-        result.append({
-            "name": b.name,
-            "column_name": col.name if col else None,
-            "column_index": col_idx,
-            "tasks": [asdict(t) for t in col.tasks] if col else [],
-        })
+        if col and col.tasks:
+            result.append({
+                "name": b.name,
+                "column_name": col.name,
+                "column_index": col_idx,
+                "tasks": [asdict(t) for t in col.tasks],
+            })
     return {"boards": result}
 
 
