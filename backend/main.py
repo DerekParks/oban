@@ -258,11 +258,12 @@ async def complete_task(req: CompleteTaskRequest):
     global _last_api_write
     _last_api_write = time.monotonic()
 
-    if len(board.columns) < 2:
-        # No done column — just delete the task
+    done_column = len(board.columns) - 1
+
+    if len(board.columns) < 2 or req.column_index >= done_column:
+        # Already in the last column or no done column — just delete the task
         remove_task_from_column(filepath, req.column_index, req.task_index)
     else:
-        done_column = len(board.columns) - 1
         raw_line = pop_task_from_column(filepath, req.column_index, req.task_index)
         insert_raw_task(filepath, done_column, 0, raw_line)
 
