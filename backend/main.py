@@ -255,16 +255,16 @@ async def complete_task(req: CompleteTaskRequest):
     filepath = _board_files.get(req.board)
     if not board or not filepath:
         raise HTTPException(status_code=404, detail="Board not found")
-    if len(board.columns) < 2:
-        raise HTTPException(status_code=400, detail="Board needs at least two columns")
-
-    done_column = len(board.columns) - 1
-
     global _last_api_write
     _last_api_write = time.monotonic()
 
-    raw_line = pop_task_from_column(filepath, req.column_index, req.task_index)
-    insert_raw_task(filepath, done_column, 0, raw_line)
+    if len(board.columns) < 2:
+        # No done column — just delete the task
+        remove_task_from_column(filepath, req.column_index, req.task_index)
+    else:
+        done_column = len(board.columns) - 1
+        raw_line = pop_task_from_column(filepath, req.column_index, req.task_index)
+        insert_raw_task(filepath, done_column, 0, raw_line)
 
     updated = parse_board(filepath)
     if updated:
