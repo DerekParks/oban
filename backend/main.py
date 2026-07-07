@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import threading
 import time
 from contextlib import asynccontextmanager
 from dataclasses import asdict
@@ -95,38 +96,54 @@ class KanbanFileHandler(FileSystemEventHandler):
 
     def __init__(self, loop: asyncio.AbstractEventLoop):
         self._loop = loop
-        self._last_event_time: float = 0
         self._debounce_seconds = 0.5
+        self._lock = threading.Lock()
+        self._timer: threading.Timer | None = None
+        # Paths seen since the last flush: path -> was-deleted.
+        # A later modify/create for the same path overrides an earlier delete.
+        self._pending: dict[Path, bool] = {}
 
     def _handle(self, event):
-        global _last_api_write
         path = Path(event.src_path)
         if path.suffix != ".md":
             return
 
-        # Debounce: skip if last event was very recent
-        now = time.monotonic()
-        if now - self._last_event_time < self._debounce_seconds:
-            return
-        self._last_event_time = now
+        # Trailing-edge debounce: coalesce the burst of events an editor
+        # emits for a single save and re-parse only once things go quiet.
+        # A leading-edge debounce would re-parse on the FIRST event, while
+        # the file is still being written, then drop the settled write.
+        with self._lock:
+            self._pending[path] = isinstance(event, FileDeletedEvent)
+            if self._timer is not None:
+                self._timer.cancel()
+            self._timer = threading.Timer(self._debounce_seconds, self._flush)
+            self._timer.start()
+
+    def _flush(self):
+        global _last_api_write
+        with self._lock:
+            pending = self._pending
+            self._pending = {}
+            self._timer = None
 
         # Skip if an API handler recently wrote files — it handles
         # its own re-parse and broadcast, so ours would be redundant
         # and could race (stale data overwriting the correct broadcast).
-        if now - _last_api_write < 1.0:
+        if time.monotonic() - _last_api_write < 1.0:
             return
 
-        if isinstance(event, FileDeletedEvent):
-            board_name = path.stem
-            if STRIP_SUFFIX and board_name.endswith(STRIP_SUFFIX):
-                board_name = board_name[: -len(STRIP_SUFFIX)]
-            _boards.pop(board_name, None)
-            _board_files.pop(board_name, None)
-        else:
-            board = parse_board(path)
-            if board:
-                _boards[board.name] = board
-                _board_files[board.name] = path
+        for path, deleted in pending.items():
+            if deleted:
+                board_name = path.stem
+                if STRIP_SUFFIX and board_name.endswith(STRIP_SUFFIX):
+                    board_name = board_name[: -len(STRIP_SUFFIX)]
+                _boards.pop(board_name, None)
+                _board_files.pop(board_name, None)
+            else:
+                board = parse_board(path)
+                if board:
+                    _boards[board.name] = board
+                    _board_files[board.name] = path
 
         asyncio.run_coroutine_threadsafe(
             _broadcast(_dashboard_payload()), self._loop
@@ -168,6 +185,8 @@ async def lifespan(app: FastAPI):
     if _observer:
         _observer.stop()
         _observer.join()
+    if handler._timer is not None:
+        handler._timer.cancel()
 
 
 # --- FastAPI app ---
